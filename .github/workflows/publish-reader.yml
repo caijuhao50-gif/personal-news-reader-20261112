@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p _site
-          cp index.html reader.css app.js app-data.mjs sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png _site/
+          cp index.html reader.css app.js push-ui.js push-config.js app-data.mjs sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png _site/
           cp feed.json _site/feed.json
           curl --fail --silent --show-error --max-time 40 --retry 2 https://private-news-cloud.caijuhao50.workers.dev/feed -o /tmp/feed.json
           node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/feed.json"));if(x.version!==1||typeof x.iv!=="string"||typeof x.data!=="string")throw Error("Invalid encrypted feed");fs.copyFileSync("/tmp/feed.json","_site/feed.json");'
