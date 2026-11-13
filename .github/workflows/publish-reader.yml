@@ -1,0 +1,49 @@
+name: Publish encrypted news library
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: news-pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare static reader with encrypted feed
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html reader.css app.js app-data.mjs sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png _site/
+          cp feed.json _site/feed.json
+          curl --fail --silent --show-error --max-time 40 --retry 2 https://private-news-cloud.caijuhao50.workers.dev/feed -o /tmp/feed.json
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/feed.json"));if(x.version!==1||typeof x.iv!=="string"||typeof x.data!=="string")throw Error("Invalid encrypted feed");fs.copyFileSync("/tmp/feed.json","_site/feed.json");'
+      - name: Keep encrypted library in the reader repository
+        shell: bash
+        run: |
+          cp _site/feed.json feed.json
+          if ! git diff --quiet -- feed.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add feed.json
+            git commit -m 'Update encrypted news library'
+            git push
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy reader
+        id: deployment
+        uses: actions/deploy-pages@v4
