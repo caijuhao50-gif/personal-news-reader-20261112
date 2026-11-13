@@ -27,7 +27,7 @@ function renderList(){
   const foot=document.createElement('span');foot.textContent='阅读全文 ↗';button.append(meta,title,preview,foot);button.onclick=()=>{location.hash='article/'+a.id;};$('newsList').append(button);
  }
  $('emptyList').hidden=items.length>0;
- $('emptyList').textContent=q?'没有匹配的新闻。':page==='favorites'?'读到想保留的内容，点“收藏”就会出现在这里。':connection?'暂时没有新闻。点“同步”；电脑生成新闻后，发布可能需要几分钟。':'先到“设置”粘贴私人连接码，或导入 Bark 的完整阅读链接。';
+ $('emptyList').textContent=q?'没有匹配的新闻。':page==='favorites'?'读到想保留的内容，点“收藏”就会出现在这里。':connection?'暂时没有新闻。点“同步”；云端生成新闻后，发布可能需要几分钟。':'先到“设置”粘贴私人连接码，或导入 Bark 的完整阅读链接。';
 }
 function showPage(name){page=name;current=null;$('article').hidden=true;$('library').hidden=name==='settings';$('settings').hidden=name!=='settings';$('bottomNav').hidden=false;
  for(const b of document.querySelectorAll('[data-page]')){b.setAttribute('aria-current',b.dataset.page===name?'page':'false');}
@@ -49,7 +49,7 @@ async function merge(items){
 async function sync(){
  if(syncing)return;if(!connection){message('请先在设置中粘贴私人连接码。');return;}
  syncing=true;$('sync').disabled=true;message('正在同步新闻…');
- try{const r=await fetch('./feed.json',{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('暂时无法读取新闻库');const payload=await r.text();if(payload.length>8000000)throw Error('新闻库过大');const feed=await decryptFeed(JSON.parse(payload),connection);await merge(feed.items);lastSync=feed.updatedAt;save('news-updated',lastSync);message(`同步完成，共 ${feed.items.length} 篇新闻。新内容发布可能延迟几分钟。`);if(!current&&page!=='settings')renderList();}
+ try{const r=await fetch('./feed.json',{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('暂时无法读取新闻库');const payload=await r.text();if(payload.length>8000000)throw Error('新闻库过大');const feed=await decryptFeed(JSON.parse(payload),connection);await merge(feed.items);lastSync=feed.updatedAt;save('news-updated',lastSync);message(`同步完成，共 ${feed.items.length} 篇新闻。新闻库通常每 15 分钟检查发布，繁忙时可能延迟。`);if(!current&&page!=='settings')renderList();}
  catch(e){message(navigator.onLine?'同步未完成，请检查连接码或稍后重试。已保存的新闻仍可阅读。':'当前离线，可以继续阅读已保存的新闻。');}
  finally{syncing=false;$('sync').disabled=false;status();}
 }
